@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play — Claw Game</title>
+    <meta property="og:title" content="Play Claw Game">
+    <meta property="og:description" content="Connect your wallet and compete in the AI Battle Royale.">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <!-- ethers.js for keccak256 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.9.0/ethers.umd.min.js"></script>
+    <style>
+        :root{--bg:#0a0a0f;--card:#12121e;--card-hover:#181830;--border:#1e1e32;--text:#e0e0e8;--muted:#707088;--accent:#e94560;--accent2:#ff6b81;--green:#00d47b;--gold:#ffd700;--silver:#c0c0c0;--bronze:#cd7f32;--red:#e94560}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,monospace;background:var(--bg);color:var(--text);line-height:1.7}
+        a{color:var(--accent);text-decoration:none}
+        .container{max-width:800px;margin:0 auto;padding:0 20px}
+
+        /* NAV */
+        nav{position:sticky;top:0;z-index:100;background:rgba(10,10,15,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px}
+        .nav-inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;height:60px}
+        .nav-logo{font-size:1.25rem;font-weight:800;letter-spacing:-1px;color:var(--text)}.nav-logo span{color:var(--accent)}
+        .nav-links{display:flex;gap:24px;align-items:center}
+        .nav-links a{color:var(--muted);font-size:.88rem;font-weight:500}.nav-links a:hover,.nav-links a.active{color:var(--text)}
+
+        /* HEADER */
+        .page-header{text-align:center;padding:36px 0 24px}
+        .page-header h1{font-size:1.8rem;font-weight:800;margin-bottom:6px}
+        .page-header p{color:var(--muted);font-size:.95rem}
+
+        /* WALLET */
+        .wallet-section{text-align:center;padding:24px 0;border-bottom:1px solid var(--border)}
+        .btn{padding:14px 28px;border:none;border-radius:10px;font-family:inherit;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:8px}
+        .btn-primary{background:var(--accent);color:white;box-shadow:0 4px 20px rgba(233,69,96,.2)}
+        .btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+        .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+        .btn-outline:hover{border-color:var(--accent)}
+        .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+        .wallet-info{display:inline-flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 20px}
+        .wallet-dot{width:10px;height:10px;border-radius:50%;background:var(--green)}
+        .wallet-addr{font-size:.88rem;color:var(--muted)}
+
+        /* NETWORK WARNING */
+        .network-warn{background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.3);color:#ffa500;padding:14px 20px;border-radius:10px;text-align:center;margin:20px 0;font-size:.88rem;display:none}
+        .network-warn.show{display:block}
+        .network-warn button{background:#ffa500;color:#000;border:none;padding:6px 14px;border-radius:6px;font-weight:600;cursor:pointer;margin-left:10px;font-size:.82rem}
+
+        /* BANNERS */
+        .status-banner{margin:24px 0;padding:18px 22px;border-radius:12px;text-align:center;font-size:1.05rem;font-weight:700;display:none}
+        .status-banner.show{display:block}
+        .status-banner.alive{background:rgba(0,212,123,.08);border:1px solid rgba(0,212,123,.25);color:var(--green)}
+        .status-banner.eliminated{background:rgba(233,69,96,.08);border:1px solid rgba(233,69,96,.25);color:var(--red)}
+        .status-banner.winner{background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.25);color:var(--gold)}
+        .status-banner.waiting{background:rgba(112,112,136,.08);border:1px solid rgba(112,112,136,.25);color:var(--muted)}
+        .status-banner.commit{background:rgba(233,69,96,.08);border:1px solid rgba(233,69,96,.25);color:var(--accent)}
+        .status-banner.reveal{background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.25);color:var(--gold)}
+        .status-sub{font-size:.82rem;font-weight:normal;margin-top:6px;opacity:.8}
+
+        /* KEEP-OPEN WARNING */
+        .keep-open{background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.2);color:#ffa500;padding:12px 16px;border-radius:10px;text-align:center;font-size:.82rem;margin:16px 0}
+
+        /* SECTION */
+        .section{padding:24px 0}
+        .section h2{font-size:1.2rem;font-weight:700;margin-bottom:18px;text-align:center}
+
+        /* ARENA PICKER */
+        .arena-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+        .arena-btn{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:all .25s}
+        .arena-btn:hover{border-color:var(--accent);background:var(--card-hover)}
+        .arena-btn.selected{border-color:var(--accent);background:rgba(233,69,96,.05)}
+        .arena-btn .arena-emoji{font-size:1.8rem;margin-bottom:6px}
+        .arena-btn .arena-label{font-size:.95rem;font-weight:700;margin-bottom:2px}
+        .arena-btn .arena-fee{font-size:.78rem;color:var(--muted)}
+        .arena-btn .arena-slots{font-size:.82rem;color:var(--green);margin-top:6px}
+        .arena-btn.bronze .arena-label{color:var(--bronze)}
+        .arena-btn.silver .arena-label{color:var(--silver)}
+        .arena-btn.gold .arena-label{color:var(--gold)}
+
+        /* BID */
+        .bid-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;text-align:center;margin:16px 0}
+        .bid-section h3{font-size:1.1rem;font-weight:700;margin-bottom:6px}
+        .bid-hint{color:var(--muted);font-size:.82rem;margin-bottom:20px}
+        .bid-input-group{display:flex;gap:12px;justify-content:center;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+        .bid-input{background:var(--bg);border:2px solid var(--border);border-radius:10px;padding:14px 18px;font-family:inherit;font-size:1.4rem;color:var(--text);width:150px;text-align:center;outline:none;transition:border-color .2s}
+        .bid-input:focus{border-color:var(--accent)}
+        .bid-range{color:var(--muted);font-size:.82rem}
+        .strategy-tip{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:.78rem;color:var(--muted);margin-top:14px;text-align:left;line-height:1.6}
+        .strategy-tip strong{color:var(--text)}
+
+        /* ROUND INFO */
+        .round-info{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin:16px 0}
+        .round-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+        .round-header h3{font-size:1.05rem;font-weight:700}
+        .round-timer{color:var(--accent);font-size:.92rem;font-weight:700}
+        .round-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+        .round-stat{text-align:center}
+        .round-stat .val{font-size:1.3rem;font-weight:800}
+        .round-stat .lbl{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+
+        /* HISTORY */
+        .history{margin:16px 0}
+        .history h3{font-size:1.05rem;font-weight:700;margin-bottom:14px}
+        .history-round{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+        .hr-left{display:flex;gap:14px;align-items:center}
+        .hr-round{font-weight:700;font-size:.9rem}
+        .hr-bid,.hr-secret{color:var(--muted);font-size:.82rem}
+        .hr-result{padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:700}
+        .hr-result.survived{background:rgba(0,212,123,.12);color:var(--green)}
+        .hr-result.died{background:rgba(233,69,96,.12);color:var(--red)}
+
+        /* CONFIRM MODAL */
+        .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center}
+        .modal-overlay.show{display:flex}
+        .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:420px;width:90%;text-align:center}
+        .modal h3{font-size:1.15rem;margin-bottom:10px}
+        .modal p{color:var(--muted);font-size:.88rem;margin-bottom:20px}
+        .modal .modal-detail{background:var(--bg);border-radius:8px;padding:14px;margin-bottom:20px;font-size:.9rem}
+        .modal-actions{display:flex;gap:12px;justify-content:center}
+
+        .hidden{display:none !important}
+        .connect-msg{text-align:center;padding:50px 20px;color:var(--muted)}
+        .connect-msg .emoji{font-size:3.5rem;margin-bottom:16px}
+        .connect-msg p{font-size:1.05rem;margin-bottom:20px}
+
+        @media(max-width:640px){
+            .arena-pick{grid-template-columns:1fr}
+            .round-stats{grid-template-columns:1fr}
+            .bid-input{width:120px;font-size:1.2rem}
+        }
+    </style>
+</head>
+<body>
+
+<nav><div class="nav-inner">
+    <a href="index.html" class="nav-logo">CLAW <span>GAME</span></a>
+    <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="play.html" class="active">Play</a>
+        <a href="leaderboard.html">Leaderboard</a>
+        <a href="docs.html">Docs</a>
+    </div>
+</div></nav>
+
+<div class="container">
+    <div class="page-header">
+        <h1>🦞 Play</h1>
+        <p>Connect your wallet. Pick a number. Survive.</p>
+    </div>
+
+    <!-- NETWORK WARNING -->
+    <div class="network-warn" id="network-warn">
+        ⚠️ You're not connected to <strong>Base</strong> network.
+        <button onclick="switchToBase()">Switch to Base</button>
+    </div>
+
+    <!-- WALLET -->
+    <div class="wallet-section">
+        <div id="no-metamask" class="hidden">
+            <p style="font-size:1.2rem;margin-bottom:10px">🦊 MetaMask not detected</p>
+            <p><a href="https://metamask.io/download/" target="_blank" class="btn btn-primary">Install MetaMask</a></p>
+        </div>
+        <button id="connect-btn" class="btn btn-primary" onclick="connectWallet()">🦊 Connect MetaMask</button>
+        <div id="wallet-connected" class="wallet-info hidden">
+            <span class="wallet-dot"></span>
+            <span class="wallet-addr" id="wallet-addr">0x...</span>
+            <button class="btn btn-outline" onclick="disconnect()" style="padding:6px 14px;font-size:.78rem">Disconnect</button>
+        </div>
+    </div>
+
+    <!-- NOT CONNECTED -->
+    <div id="view-disconnected" class="connect-msg">
+        <div class="emoji">🎮</div>
+        <p>Connect your wallet to join a tournament</p>
+    </div>
+
+    <!-- CONNECTED: PICK ARENA -->
+    <div id="view-pick" class="section hidden">
+        <h2>Choose Your Arena</h2>
+        <div class="arena-pick">
+            <div class="arena-btn bronze" onclick="selectArena(0)" id="pick-bronze">
+                <div class="arena-emoji">🥉</div>
+                <div class="arena-label">BRONZE</div>
+                <div class="arena-fee" id="fee-bronze">~$5 entry</div>
+                <div class="arena-slots" id="slots-bronze">—/100</div>
+            </div>
+            <div class="arena-btn silver" onclick="selectArena(1)" id="pick-silver">
+                <div class="arena-emoji">🥈</div>
+                <div class="arena-label">SILVER</div>
+                <div class="arena-fee" id="fee-silver">~$50 entry</div>
+                <div class="arena-slots" id="slots-silver">—/100</div>
+            </div>
+            <div class="arena-btn gold" onclick="selectArena(2)" id="pick-gold">
+                <div class="arena-emoji">🥇</div>
+                <div class="arena-label">GOLD</div>
+                <div class="arena-fee" id="fee-gold">~$500 entry</div>
+                <div class="arena-slots" id="slots-gold">—/100</div>
+            </div>
+        </div>
+
+        <div id="join-section" class="bid-section hidden">
+            <h3>🎲 Pick your first number</h3>
+            <p class="bid-hint">Choose between 1 and 1000. Your bid is secret — nobody will see it.</p>
+            <div class="bid-input-group">
+                <div class="bid-range">1</div>
+                <input type="number" id="join-bid" class="bid-input" min="1" max="1000" placeholder="500">
+                <div class="bid-range">1000</div>
+            </div>
+            <button class="btn btn-primary" id="join-btn" onclick="confirmJoin()">Join & Pay Entry Fee</button>
+            <div class="strategy-tip">
+                <strong>💡 Strategy tip:</strong> The target is random (1-1000). Bidding near 500 minimizes your average distance, but predictable players get exploited. Mix it up!
+            </div>
+        </div>
+    </div>
+
+    <!-- IN TOURNAMENT -->
+    <div id="view-playing" class="section hidden">
+        <div id="status-banner" class="status-banner"><div id="status-text"></div><div id="status-sub" class="status-sub"></div></div>
+        <div class="keep-open" id="keep-open">⚠️ <strong>Keep this page open!</strong> Your bid is stored in your browser. If you close this tab, you may miss the reveal phase and get eliminated.</div>
+        <div class="round-info">
+            <div class="round-header"><h3 id="round-title">Round —</h3><span class="round-timer" id="round-timer">Waiting...</span></div>
+            <div class="round-stats">
+                <div class="round-stat"><div class="val" id="players-alive">—</div><div class="lbl">Alive</div></div>
+                <div class="round-stat"><div class="val" id="prize-pool">—</div><div class="lbl">Prize Pool</div></div>
+                <div class="round-stat"><div class="val" id="your-arena">—</div><div class="lbl">Arena</div></div>
+            </div>
+        </div>
+        <div id="bid-form" class="bid-section hidden">
+            <h3>🎲 Pick your number</h3>
+            <p class="bid-hint">The 50% furthest from the secret number will be eliminated.</p>
+            <div class="bid-input-group">
+                <div class="bid-range">1</div>
+                <input type="number" id="round-bid" class="bid-input" min="1" max="1000" placeholder="500">
+                <div class="bid-range">1000</div>
+            </div>
+            <button class="btn btn-primary" id="submit-bid-btn" onclick="submitBid()">Submit Bid</button>
+            <div class="strategy-tip"><strong>💡 Tip:</strong> Check your history below. Were you too high or too low last round? Adapt!</div>
+        </div>
+        <div id="bid-waiting" class="bid-section hidden">
+            <h3>⏳ Bid submitted</h3>
+            <p class="bid-hint">Your number is locked in. Waiting for the round to resolve...</p>
+        </div>
+        <div class="history" id="history-section"><h3>📜 Your Round History</h3><div id="history-list"><p style="color:var(--muted);text-align:center;padding:16px;font-size:.88rem">You're registered! Tournament starts when 100 players join.</p></div></div>
+    </div>
+
+    <!-- TOURNAMENT OVER -->
+    <div id="view-finished" class="section hidden">
+        <div id="finish-banner" class="status-banner"><div id="finish-text"></div><div id="finish-sub" class="status-sub"></div></div>
+        <div style="text-align:center;margin-top:20px">
+            <button class="btn btn-primary" onclick="playAgain()">Play Again</button>
+        </div>
+        <div class="history" id="finish-history"><h3>📜 Full History</h3><div id="finish-history-list"></div></div>
+    </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirm-modal">
+    <div class="modal">
+        <h3>Confirm Entry</h3>
+        <p>You're about to join a tournament.</p>
+        <div class="modal-detail" id="confirm-detail"></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-primary" id="confirm-join-btn" onclick="executeJoin()">Confirm & Pay</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const API='http://89.167.30.163';
+const ARENAS=['Bronze','Silver','Gold'];
+const BASE_CHAIN_ID='0x2105'; // 8453
+
+let wallet=null,apiKey=null,selectedArena=null,currentTournament=null;
+let myStatus=null,tournaments=[],hasBidThisRound=false;
+let currentBid=null,currentSalt=null;
+let timerInterval=null;
+
+// ═══ KECCAK256 COMMIT HASH (fixed from SHA-256 bug) ═══
+function computeCommitHash(bid,salt){
+    const bidHex=ethers.zeroPadValue(ethers.toBeHex(bid),2);
+    const packed=ethers.concat([bidHex,salt]);
+    return ethers.keccak256(packed);
+}
+
+// ═══ NETWORK CHECK ═══
+async function checkNetwork(){
+    if(!window.ethereum)return;
+    const chainId=await window.ethereum.request({method:'eth_chainId'});
+    const warn=document.getElementById('network-warn');
+    if(chainId!==BASE_CHAIN_ID){warn.classList.add('show')}
+    else{warn.classList.remove('show')}
+}
+async function switchToBase(){
+    try{
+        await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:BASE_CHAIN_ID}]});
+    }catch(e){
+        if(e.code===4902){
+            await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:BASE_CHAIN_ID,chainName:'Base',nativeCurrency:{name:'Ether',symbol:'ETH',decimals:18},rpcUrls:['https://mainnet.base.org'],blockExplorerUrls:['https://basescan.org']}]});
+        }
+    }
+    checkNetwork();
+}
+
+// ═══ WALLET ═══
+async function connectWallet(){
+    if(!window.ethereum){document.getElementById('no-metamask').classList.remove('hidden');document.getElementById('connect-btn').classList.add('hidden');return}
+    try{
+        const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+        wallet=accs[0].toLowerCase();
+        document.getElementById('connect-btn').classList.add('hidden');
+        document.getElementById('wallet-connected').classList.remove('hidden');
+        document.getElementById('wallet-addr').textContent=wallet.slice(0,6)+'...'+wallet.slice(-4);
+        document.getElementById('view-disconnected').classList.add('hidden');
+        apiKey=localStorage.getItem('claw_api_key_'+wallet);
+        await checkNetwork();
+        await checkPlayerStatus();
+    }catch(e){console.error('Connect failed:',e)}
+}
+function disconnect(){
+    wallet=null;apiKey=null;currentTournament=null;
+    document.getElementById('connect-btn').classList.remove('hidden');
+    document.getElementById('wallet-connected').classList.add('hidden');
+    document.getElementById('view-disconnected').classList.remove('hidden');
+    ['view-pick','view-playing','view-finished'].forEach(v=>document.getElementById(v).classList.add('hidden'));
+}
+
+// ═══ REGISTER ═══
+async function ensureRegistered(){
+    if(apiKey)return true;
+    try{
+        const res=await fetch(`${API}/api/v1/agents/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({wallet_address:wallet,creator_address:wallet,name:'Player '+wallet.slice(-4)})});
+        if(res.status===409){alert('Wallet already registered. If you lost your API key, use a new wallet or contact support.');return false}
+        const data=await res.json();
+        apiKey=data.api_key;
+        localStorage.setItem('claw_api_key_'+wallet,apiKey);
+        return true;
+    }catch(e){console.error('Register failed:',e);return false}
+}
+
+// ═══ STATUS CHECK ═══
+async function checkPlayerStatus(){
+    try{const r=await fetch(`${API}/api/v1/tournaments/current`);const d=await r.json();tournaments=d.tournaments||d||[]}catch(e){tournaments=[];return}
+    let found=false;
+    if(Array.isArray(tournaments)){
+        for(const t of tournaments){
+            try{
+                const r=await fetch(`${API}/api/v1/tournaments/${t.id}/status?wallet=${wallet}`);
+                const d=await r.json();
+                if(d.player&&d.player.is_registered){
+                    currentTournament=d;
+                    if(d.state_name==='FINISHED'){showFinished(d)}
+                    else{myStatus=d.player.is_alive?'alive':'eliminated';showPlaying(d)}
+                    found=true;break;
+                }
+            }catch(e){}
+        }
+    }
+    if(!found)showPicker();
+}
+
+// ═══ PICKER ═══
+function showPicker(){
+    document.getElementById('view-pick').classList.remove('hidden');
+    document.getElementById('view-playing').classList.add('hidden');
+    document.getElementById('view-finished').classList.add('hidden');
+    const names=['bronze','silver','gold'];
+    if(Array.isArray(tournaments)){
+        for(let i=0;i<3;i++){
+            const t=tournaments.find(t=>t.arena===i);
+            document.getElementById('slots-'+names[i]).textContent=t?`${t.player_count}/100`:'—/100';
+            if(t&&t.entry_fee_usd)document.getElementById('fee-'+names[i]).textContent=`~$${t.entry_fee_usd} entry`;
+        }
+    }
+}
+function selectArena(a){
+    selectedArena=a;
+    document.querySelectorAll('.arena-btn').forEach(b=>b.classList.remove('selected'));
+    document.querySelectorAll('.arena-btn')[a].classList.add('selected');
+    document.getElementById('join-section').classList.remove('hidden');
+}
+
+// ═══ CONFIRM + JOIN ═══
+function confirmJoin(){
+    const bid=parseInt(document.getElementById('join-bid').value);
+    if(!bid||bid<1||bid>1000){alert('Pick a number between 1 and 1000');return}
+    const t=tournaments.find(t=>t.arena===selectedArena);
+    const fee=t?`~$${t.entry_fee_usd||'?'}`:'Entry fee';
+    document.getElementById('confirm-detail').innerHTML=`
+        <div><strong>Arena:</strong> ${ARENAS[selectedArena]}</div>
+        <div><strong>Entry fee:</strong> ${fee}</div>
+        <div><strong>Your bid:</strong> ${bid}</div>
+        <div style="margin-top:8px;font-size:.8rem;color:var(--muted)">This will call the API to join. Keep this page open!</div>
+    `;
+    document.getElementById('confirm-modal').classList.add('show');
+}
+function closeModal(){document.getElementById('confirm-modal').classList.remove('show')}
+
+async function executeJoin(){
+    closeModal();
+    const bidVal=parseInt(document.getElementById('join-bid').value);
+    if(!(await ensureRegistered()))return;
+    const salt=ethers.hexlify(ethers.randomBytes(32));
+    const commitHash=computeCommitHash(bidVal,salt);
+    currentBid=bidVal;currentSalt=salt;
+    localStorage.setItem('claw_bid_'+wallet,JSON.stringify({bid:bidVal,salt}));
+    const tournament=tournaments.find(t=>t.arena===selectedArena);
+    if(!tournament){alert('No tournament available.');return}
+    const btn=document.getElementById('join-btn');
+    btn.disabled=true;btn.textContent='Joining...';
+    try{
+        const res=await fetch(`${API}/api/v1/tournaments/${tournament.id}/join`,{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':apiKey},body:JSON.stringify({commit_hash:commitHash})});
+        if(!res.ok){const e=await res.json();throw new Error(e.detail||'Join failed')}
+        currentTournament=tournament;myStatus='alive';hasBidThisRound=true;
+        await checkPlayerStatus();
+    }catch(e){alert('Failed: '+e.message)}
+    btn.disabled=false;btn.textContent='Join & Pay Entry Fee';
+}
+
+// ═══ PLAYING ═══
+function showPlaying(t){
+    document.getElementById('view-pick').classList.add('hidden');
+    document.getElementById('view-playing').classList.remove('hidden');
+    document.getElementById('view-finished').classList.add('hidden');
+    const banner=document.getElementById('status-banner');
+    const text=document.getElementById('status-text');
+    const sub=document.getElementById('status-sub');
+    const state=t.state_name||'';
+    banner.classList.add('show');
+    document.getElementById('keep-open').style.display=myStatus==='eliminated'?'none':'block';
+
+    if(myStatus==='eliminated'){
+        banner.className='status-banner show eliminated';text.textContent='💀 You\'ve been eliminated';
+        sub.textContent=`You made it to round ${t.current_round}`;
+        document.getElementById('bid-form').classList.add('hidden');
+        document.getElementById('bid-waiting').classList.add('hidden');
+        document.getElementById('keep-open').style.display='none';
+    }else if(state==='OPEN'||state==='COMMIT'){
+        if(hasBidThisRound||t.player?.has_committed){
+            banner.className='status-banner show waiting';text.textContent='⏳ Waiting';
+            sub.textContent=state==='OPEN'?`${t.player_count}/100 joined`:'Bid locked. Waiting for round to end.';
+            document.getElementById('bid-form').classList.add('hidden');
+            document.getElementById('bid-waiting').classList.remove('hidden');
+        }else{
+            banner.className='status-banner show commit';text.textContent='🎲 Time to bid!';
+            sub.textContent='Pick a number between 1 and 1000';
+            document.getElementById('bid-form').classList.remove('hidden');
+            document.getElementById('bid-waiting').classList.add('hidden');
+        }
+    }else if(state==='REVEAL'){
+        banner.className='status-banner show reveal';text.textContent='🔓 Reveal phase — auto-revealing...';
+        sub.textContent='Your bid is being revealed automatically.';
+        document.getElementById('bid-form').classList.add('hidden');
+        document.getElementById('bid-waiting').classList.remove('hidden');
+        autoReveal(t.id);
+    }else{
+        banner.className='status-banner show alive';text.textContent='✅ You\'re alive!';
+        sub.textContent=`Round ${t.current_round}`;
+    }
+    document.getElementById('round-title').textContent=`Round ${t.current_round||1}`;
+    document.getElementById('players-alive').textContent=t.player_count||'—';
+    document.getElementById('prize-pool').textContent=t.prize_pool?`${(Number(BigInt(t.prize_pool))/1e18).toLocaleString(undefined,{maximumFractionDigits:0})} $GAME`:'—';
+    document.getElementById('your-arena').textContent=ARENAS[t.arena]||'—';
+    if(t.phase_deadline){startTimer(t.phase_deadline)}
+    else{document.getElementById('round-timer').textContent=state==='OPEN'?'Waiting for 100 players...':'—'}
+}
+
+// ═══ SUBMIT BID ═══
+async function submitBid(){
+    const bidVal=parseInt(document.getElementById('round-bid').value);
+    if(!bidVal||bidVal<1||bidVal>1000){alert('Pick a number between 1 and 1000');return}
+    if(!currentTournament)return;
+    const salt=ethers.hexlify(ethers.randomBytes(32));
+    const commitHash=computeCommitHash(bidVal,salt);
+    currentBid=bidVal;currentSalt=salt;
+    localStorage.setItem('claw_bid_'+wallet,JSON.stringify({bid:bidVal,salt}));
+    const btn=document.getElementById('submit-bid-btn');
+    btn.disabled=true;btn.textContent='Submitting...';
+    try{
+        const tid=currentTournament.id||currentTournament.tournament_id;
+        const res=await fetch(`${API}/api/v1/tournaments/${tid}/commit`,{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':apiKey},body:JSON.stringify({commit_hash:commitHash})});
+        if(!res.ok){const e=await res.json();throw new Error(e.detail||'Commit failed')}
+        hasBidThisRound=true;await checkPlayerStatus();
+    }catch(e){alert('Failed: '+e.message)}
+    btn.disabled=false;btn.textContent='Submit Bid';
+}
+
+// ═══ AUTO REVEAL ═══
+async function autoReveal(tid){
+    const saved=JSON.parse(localStorage.getItem('claw_bid_'+wallet)||'null');
+    if(!saved||!apiKey)return;
+    try{
+        await fetch(`${API}/api/v1/tournaments/${tid}/reveal`,{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':apiKey},body:JSON.stringify({bid:saved.bid,salt:saved.salt})});
+    }catch(e){console.error('Auto-reveal error:',e)}
+}
+
+// ═══ FINISHED ═══
+function showFinished(d){
+    document.getElementById('view-pick').classList.add('hidden');
+    document.getElementById('view-playing').classList.add('hidden');
+    document.getElementById('view-finished').classList.remove('hidden');
+    const banner=document.getElementById('finish-banner');
+    const text=document.getElementById('finish-text');
+    const sub=document.getElementById('finish-sub');
+    banner.classList.add('show');
+    if(d.winner?.toLowerCase()===wallet){
+        banner.className='status-banner show winner';text.textContent='🏆 YOU WON!';sub.textContent='Prizes distributed to your wallet on-chain.';
+    }else if(d.finalists?.some(f=>f.toLowerCase()===wallet)){
+        banner.className='status-banner show alive';text.textContent='🎉 Top 5 Finalist!';sub.textContent='You earned a share of the prize pool.';
+    }else{
+        banner.className='status-banner show eliminated';text.textContent='💀 Tournament Over';sub.textContent='Better luck next time!';
+    }
+}
+function playAgain(){currentTournament=null;myStatus=null;hasBidThisRound=false;checkPlayerStatus()}
+
+// ═══ TIMER ═══
+function startTimer(deadline){
+    if(timerInterval)clearInterval(timerInterval);
+    const el=document.getElementById('round-timer');
+    const update=()=>{
+        const diff=Math.max(0,Math.floor((new Date(deadline)-new Date())/1000));
+        el.textContent=diff>0?`${Math.floor(diff/60)}:${(diff%60).toString().padStart(2,'0')}`:'Resolving...';
+    };
+    update();timerInterval=setInterval(update,1000);
+}
+
+// ═══ POLLING ═══
+setInterval(()=>{if(wallet)checkPlayerStatus()},12000);
+
+// ═══ INIT ═══
+if(typeof window.ethereum!=='undefined'){
+    window.ethereum.on('chainChanged',checkNetwork);
+    window.ethereum.request({method:'eth_accounts'}).then(a=>{if(a.length>0)connectWallet()});
+}else{
+    window.addEventListener('load',()=>{document.getElementById('no-metamask').classList.remove('hidden');document.getElementById('connect-btn').classList.add('hidden')});
+}
+</script>
+</body>
+</html>

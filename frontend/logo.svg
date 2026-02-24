@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0a0a14"/>
+    </radialGradient>
+    <linearGradient id="lobsterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4466"/>
+      <stop offset="50%" stop-color="#e94560"/>
+      <stop offset="100%" stop-color="#cc2244"/>
+    </linearGradient>
+    <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd700"/>
+      <stop offset="50%" stop-color="#ffaa00"/>
+      <stop offset="100%" stop-color="#ff8800"/>
+    </linearGradient>
+    <linearGradient id="coinShine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff8d0" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#ffd700" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="coinGlow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="248" fill="none" stroke="#e94560" stroke-width="2" opacity="0.3"/>
+
+  <!-- COIN (held by right claw) -->
+  <g filter="url(#coinGlow)" transform="translate(310, 180)">
+    <!-- Coin body -->
+    <ellipse cx="0" cy="0" rx="52" ry="52" fill="url(#coinGrad)" stroke="#cc8800" stroke-width="3"/>
+    <!-- Coin inner ring -->
+    <ellipse cx="0" cy="0" rx="42" ry="42" fill="none" stroke="#ffe066" stroke-width="2" opacity="0.6"/>
+    <!-- $ symbol -->
+    <text x="0" y="8" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="42" font-weight="900" fill="#8B6914">G</text>
+    <text x="0" y="8" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="42" font-weight="900" fill="#ffe066" opacity="0.7">G</text>
+    <!-- Shine -->
+    <ellipse cx="-15" cy="-18" rx="20" ry="12" fill="url(#coinShine)" transform="rotate(-30, -15, -18)"/>
+  </g>
+
+  <!-- LOBSTER BODY -->
+  <g filter="url(#glow)">
+    <!-- Tail segments -->
+    <ellipse cx="256" cy="400" rx="35" ry="20" fill="url(#lobsterGrad)" transform="rotate(-5, 256, 400)"/>
+    <ellipse cx="256" cy="380" rx="40" ry="22" fill="url(#lobsterGrad)"/>
+    <ellipse cx="256" cy="358" rx="44" ry="24" fill="url(#lobsterGrad)"/>
+    
+    <!-- Tail fan -->
+    <ellipse cx="240" cy="420" rx="22" ry="12" fill="#cc2244" transform="rotate(20, 240, 420)"/>
+    <ellipse cx="256" cy="425" rx="20" ry="14" fill="#cc2244"/>
+    <ellipse cx="272" cy="420" rx="22" ry="12" fill="#cc2244" transform="rotate(-20, 272, 420)"/>
+
+    <!-- Main body / thorax -->
+    <ellipse cx="256" cy="310" rx="58" ry="55" fill="url(#lobsterGrad)"/>
+    
+    <!-- Body segments lines -->
+    <line x1="210" y1="340" x2="302" y2="340" stroke="#aa1133" stroke-width="1.5" opacity="0.5"/>
+    <line x1="215" y1="355" x2="297" y2="355" stroke="#aa1133" stroke-width="1.5" opacity="0.5"/>
+    <line x1="220" y1="370" x2="292" y2="370" stroke="#aa1133" stroke-width="1.5" opacity="0.5"/>
+
+    <!-- HEAD -->
+    <ellipse cx="256" cy="260" rx="42" ry="35" fill="url(#lobsterGrad)"/>
+    
+    <!-- Eyes -->
+    <!-- Eye stalks -->
+    <line x1="238" y1="250" x2="225" y2="228" stroke="#cc2244" stroke-width="6" stroke-linecap="round"/>
+    <line x1="274" y1="250" x2="287" y2="228" stroke="#cc2244" stroke-width="6" stroke-linecap="round"/>
+    <!-- Eye balls -->
+    <circle cx="222" cy="224" r="10" fill="white"/>
+    <circle cx="290" cy="224" r="10" fill="white"/>
+    <!-- Pupils -->
+    <circle cx="224" cy="222" r="6" fill="#1a1a2e"/>
+    <circle cx="292" cy="222" r="6" fill="#1a1a2e"/>
+    <!-- Eye shine -->
+    <circle cx="226" cy="220" r="2.5" fill="white"/>
+    <circle cx="294" cy="220" r="2.5" fill="white"/>
+
+    <!-- Mouth (smirk) -->
+    <path d="M 242 275 Q 256 285, 270 275" stroke="#aa1133" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+    <!-- Antennae -->
+    <path d="M 240 242 Q 200 200, 170 180" stroke="#cc2244" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M 272 242 Q 312 200, 342 180" stroke="#cc2244" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- Antennae tips -->
+    <circle cx="170" cy="180" r="4" fill="#ff6688"/>
+    <circle cx="342" cy="180" r="4" fill="#ff6688"/>
+
+    <!-- LEGS (small) -->
+    <line x1="220" y1="320" x2="185" y2="345" stroke="#cc2244" stroke-width="4" stroke-linecap="round"/>
+    <line x1="218" y1="335" x2="183" y2="360" stroke="#cc2244" stroke-width="4" stroke-linecap="round"/>
+    <line x1="292" y1="320" x2="327" y2="345" stroke="#cc2244" stroke-width="4" stroke-linecap="round"/>
+    <line x1="294" y1="335" x2="329" y2="360" stroke="#cc2244" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- LEFT CLAW ARM -->
+    <path d="M 210 290 Q 160 270, 140 240" stroke="url(#lobsterGrad)" stroke-width="14" fill="none" stroke-linecap="round"/>
+    
+    <!-- LEFT CLAW (open, waving) -->
+    <!-- Upper pincer -->
+    <path d="M 140 240 Q 115 210, 100 200" stroke="url(#lobsterGrad)" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <!-- Lower pincer -->
+    <path d="M 140 240 Q 120 250, 105 235" stroke="url(#lobsterGrad)" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <!-- Claw tips -->
+    <circle cx="100" cy="200" r="5" fill="#ff6688"/>
+    <circle cx="105" cy="235" r="5" fill="#ff6688"/>
+
+    <!-- RIGHT CLAW ARM (holding coin) -->
+    <path d="M 302 290 Q 340 260, 310 210" stroke="url(#lobsterGrad)" stroke-width="14" fill="none" stroke-linecap="round"/>
+    
+    <!-- RIGHT CLAW (gripping coin) -->
+    <!-- Upper pincer (behind coin) -->
+    <path d="M 310 210 Q 330 185, 340 170" stroke="url(#lobsterGrad)" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <!-- Lower pincer (in front, gripping) -->
+    <path d="M 310 210 Q 295 195, 290 178" stroke="url(#lobsterGrad)" stroke-width="12" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Text: CLAW GAME at bottom -->
+  <text x="256" y="478" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-size="36" font-weight="900" fill="#e94560" letter-spacing="4">CLAW GAME</text>
+</svg>

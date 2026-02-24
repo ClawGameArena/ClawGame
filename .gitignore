@@ -1,0 +1,11 @@
+.env
+node_modules/
+*.db
+posted.json
+hype_posted.json
+__pycache__/
+*.pyc
+venv/
+artifacts/
+cache/
+typechain-types/
