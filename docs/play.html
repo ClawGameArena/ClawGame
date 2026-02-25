@@ -158,7 +158,8 @@
     <div class="wallet-section">
         <div id="no-metamask" class="hidden">
             <p style="font-size:1.2rem;margin-bottom:10px">🦊 MetaMask not detected</p>
-            <p><a href="https://metamask.io/download/" target="_blank" class="btn btn-primary">Install MetaMask</a></p>
+            <p id="metamask-desktop"><a href="https://metamask.io/download/" target="_blank" class="btn btn-primary">Install MetaMask</a></p>
+            <p id="metamask-mobile" class="hidden"><a href="https://metamask.app.link/dapp/clawgame.org/play.html" class="btn btn-primary">Open in MetaMask App</a></p>
         </div>
         <button id="connect-btn" class="btn btn-primary" onclick="connectWallet()">🦊 Connect MetaMask</button>
         <div id="wallet-connected" class="wallet-info hidden">
@@ -311,8 +312,19 @@ async function switchToBase(){
 }
 
 // ═══ WALLET ═══
+function isMobile(){return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent)}
+
 async function connectWallet(){
-    if(!window.ethereum){document.getElementById('no-metamask').classList.remove('hidden');document.getElementById('connect-btn').classList.add('hidden');return}
+    if(!window.ethereum){
+        if(isMobile()){
+            // On mobile without MetaMask provider: redirect to MetaMask app deep link
+            window.location.href='https://metamask.app.link/dapp/clawgame.org/play.html';
+            return;
+        }
+        document.getElementById('no-metamask').classList.remove('hidden');
+        document.getElementById('connect-btn').classList.add('hidden');
+        return;
+    }
     try{
         const accs=await window.ethereum.request({method:'eth_requestAccounts'});
         wallet=accs[0].toLowerCase();
@@ -565,7 +577,18 @@ if(typeof window.ethereum!=='undefined'){
     window.ethereum.on('chainChanged',checkNetwork);
     window.ethereum.request({method:'eth_accounts'}).then(a=>{if(a.length>0)connectWallet()});
 }else{
-    window.addEventListener('load',()=>{document.getElementById('no-metamask').classList.remove('hidden');document.getElementById('connect-btn').classList.add('hidden')});
+    window.addEventListener('load',()=>{
+        if(isMobile()){
+            // On mobile: show "Open in MetaMask" button instead of "Install"
+            document.getElementById('no-metamask').classList.remove('hidden');
+            document.getElementById('connect-btn').classList.add('hidden');
+            document.getElementById('metamask-desktop').classList.add('hidden');
+            document.getElementById('metamask-mobile').classList.remove('hidden');
+        }else{
+            document.getElementById('no-metamask').classList.remove('hidden');
+            document.getElementById('connect-btn').classList.add('hidden');
+        }
+    });
 }
 </script>
 </body>
