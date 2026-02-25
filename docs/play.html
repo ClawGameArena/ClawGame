@@ -271,6 +271,14 @@ const API='';
 const ARENAS=['Bronze','Silver','Gold'];
 const BASE_CHAIN_ID='0x2105'; // 8453
 
+// ═══ CONTRACT CONFIG ═══
+const CLAWGAME_ADDRESS = '0xfa6D6407e8CD8b2b63eFAAc7d258D584c00BDe0E';
+const GAME_TOKEN = '0x4d442EC52ce06e7CcD3E88622782736f62DC3843';
+const UNISWAP_ROUTER = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24';
+const WETH = '0x4200000000000000000000000000000000000006';
+const CLAWGAME_ABI = ['function joinWithETH(uint256 tid, address creator) external payable'];
+const ROUTER_ABI = ['function getAmountsIn(uint256 amountOut, address[] calldata path) external view returns (uint256[] memory amounts)'];
+
 let wallet=null,apiKey=null,selectedArena=null,currentTournament=null;
 let myStatus=null,tournaments=[],hasBidThisRound=false;
 let currentBid=null,currentSalt=null;
@@ -390,7 +398,7 @@ function confirmJoin(){
         <div><strong>Arena:</strong> ${ARENAS[selectedArena]}</div>
         <div><strong>Entry fee:</strong> ${fee}</div>
         <div><strong>Your bid:</strong> ${bid}</div>
-        <div style="margin-top:8px;font-size:.8rem;color:var(--muted)">This will call the API to join. Keep this page open!</div>
+        <div style="margin-top:8px;font-size:.8rem;color:var(--muted)">This will open MetaMask to pay the entry fee on-chain. Keep this page open!</div>
     `;
     document.getElementById('confirm-modal').classList.add('show');
 }
@@ -407,13 +415,38 @@ async function executeJoin(){
     const tournament=tournaments.find(t=>t.arena===selectedArena);
     if(!tournament){alert('No tournament available.');return}
     const btn=document.getElementById('join-btn');
-    btn.disabled=true;btn.textContent='Joining...';
+    btn.disabled=true;btn.textContent='Paying on-chain...';
     try{
+        // ── Step 1: Calculate ETH needed via Uniswap getAmountsIn ──
+        const provider=new ethers.BrowserProvider(window.ethereum);
+        const signer=await provider.getSigner();
+        const entryFee=BigInt(tournament.entry_fee_game);
+        const router=new ethers.Contract(UNISWAP_ROUTER,ROUTER_ABI,provider);
+        let ethNeeded;
+        try{
+            const amounts=await router.getAmountsIn(entryFee,[WETH,GAME_TOKEN]);
+            ethNeeded=amounts[0]*130n/100n; // +30% slippage buffer
+        }catch(e){
+            // Fallback: estimate from entry_fee_usd
+            ethNeeded=ethers.parseEther('0.001');
+        }
+        // ── Step 2: Call joinWithETH on ClawGame via MetaMask ──
+        btn.textContent='Confirm in MetaMask...';
+        const claw=new ethers.Contract(CLAWGAME_ADDRESS,CLAWGAME_ABI,signer);
+        const chainId=tournament.chain_id;
+        const tx=await claw.joinWithETH(chainId,wallet,{value:ethNeeded});
+        btn.textContent='Waiting for confirmation...';
+        await tx.wait();
+        // ── Step 3: Call API to register join ──
+        btn.textContent='Registering...';
         const res=await fetch(`${API}/api/v1/tournaments/${tournament.id}/join`,{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':apiKey},body:JSON.stringify({commit_hash:commitHash})});
-        if(!res.ok){const e=await res.json();throw new Error(e.detail||'Join failed')}
+        if(!res.ok){const e=await res.json();throw new Error(e.detail||'API join failed (but on-chain payment succeeded!)')}
         currentTournament=tournament;myStatus='alive';hasBidThisRound=true;
         await checkPlayerStatus();
-    }catch(e){alert('Failed: '+e.message)}
+    }catch(e){
+        if(e.code===4001||e.code==='ACTION_REJECTED'){alert('Transaction cancelled.')}
+        else{alert('Failed: '+e.message)}
+    }
     btn.disabled=false;btn.textContent='Join & Pay Entry Fee';
 }
 
