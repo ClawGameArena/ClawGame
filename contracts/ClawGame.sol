@@ -31,7 +31,7 @@ interface ISwapHelper {
 contract ClawGame {
 
     // ───────── Constants ─────────
-    uint256 public constant MAX_PLAYERS = 100;
+    uint256 public maxPlayers = 25;
     uint256 public constant CANCEL_DEADLINE = 7 days;
     address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
@@ -270,6 +270,11 @@ contract ClawGame {
         treasury = t;
     }
 
+    function setMaxPlayers(uint256 _max) external onlyOwner {
+        require(_max >= 2 && _max <= 1000, "Invalid max");
+        maxPlayers = _max;
+    }
+
     function transferOwnership(address to) external onlyOwner {
         if (to == address(0)) revert ZeroAddress();
         pendingOwner = to;
@@ -302,7 +307,7 @@ contract ClawGame {
     function _checkJoin(Tournament storage t, uint256 tid) internal view {
         if (t.state != 0) revert NotOpen();
         if (isPlayer[tid][msg.sender]) revert AlreadyRegistered();
-        if (t.playerCount >= MAX_PLAYERS) revert TournamentFull();
+        if (t.playerCount >= maxPlayers) revert TournamentFull();
     }
 
     function _register(uint256 tid, Tournament storage t, address creator) internal {
@@ -314,7 +319,7 @@ contract ClawGame {
         t.prizePool += t.entryFee;
         totalActivePool += t.entryFee;
         emit PlayerJoined(tid, msg.sender, creator);
-        if (t.playerCount == MAX_PLAYERS) {
+        if (t.playerCount == maxPlayers) {
             t.state = 1;
             emit TournamentActive(tid, t.prizePool);
         }

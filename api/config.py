@@ -29,7 +29,7 @@ class Config:
     OWNER_PRIVATE_KEY: str = ""
 
     # ── Game Settings ──
-    MAX_PLAYERS: int = 100
+    MAX_PLAYERS: int = 25
     BID_MIN: int = 1
     BID_MAX: int = 1000
     COMMIT_DURATION: int = 300      # 5 minutes

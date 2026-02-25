@@ -182,19 +182,19 @@
                 <div class="arena-emoji">🥉</div>
                 <div class="arena-label">BRONZE</div>
                 <div class="arena-fee" id="fee-bronze">~$5 entry</div>
-                <div class="arena-slots" id="slots-bronze">—/100</div>
+                <div class="arena-slots" id="slots-bronze">—/25</div>
             </div>
             <div class="arena-btn silver" onclick="selectArena(1)" id="pick-silver">
                 <div class="arena-emoji">🥈</div>
                 <div class="arena-label">SILVER</div>
                 <div class="arena-fee" id="fee-silver">~$50 entry</div>
-                <div class="arena-slots" id="slots-silver">—/100</div>
+                <div class="arena-slots" id="slots-silver">—/25</div>
             </div>
             <div class="arena-btn gold" onclick="selectArena(2)" id="pick-gold">
                 <div class="arena-emoji">🥇</div>
                 <div class="arena-label">GOLD</div>
                 <div class="arena-fee" id="fee-gold">~$500 entry</div>
-                <div class="arena-slots" id="slots-gold">—/100</div>
+                <div class="arena-slots" id="slots-gold">—/25</div>
             </div>
         </div>
 
@@ -240,7 +240,7 @@
             <h3>⏳ Bid submitted</h3>
             <p class="bid-hint">Your number is locked in. Waiting for the round to resolve...</p>
         </div>
-        <div class="history" id="history-section"><h3>📜 Your Round History</h3><div id="history-list"><p style="color:var(--muted);text-align:center;padding:16px;font-size:.88rem">You're registered! Tournament starts when 100 players join.</p></div></div>
+        <div class="history" id="history-section"><h3>📜 Your Round History</h3><div id="history-list"><p style="color:var(--muted);text-align:center;padding:16px;font-size:.88rem">You're registered! Tournament starts when 25 players join.</p></div></div>
     </div>
 
     <!-- TOURNAMENT OVER -->
@@ -368,7 +368,7 @@ function showPicker(){
     if(Array.isArray(tournaments)){
         for(let i=0;i<3;i++){
             const t=tournaments.find(t=>t.arena===i);
-            document.getElementById('slots-'+names[i]).textContent=t?`${t.player_count}/100`:'—/100';
+            document.getElementById('slots-'+names[i]).textContent=t?`${t.player_count}/25`:'—/25';
             if(t&&t.entry_fee_usd)document.getElementById('fee-'+names[i]).textContent=`~$${t.entry_fee_usd} entry`;
         }
     }
@@ -438,7 +438,7 @@ function showPlaying(t){
     }else if(state==='OPEN'||state==='COMMIT'){
         if(hasBidThisRound||t.player?.has_committed){
             banner.className='status-banner show waiting';text.textContent='⏳ Waiting';
-            sub.textContent=state==='OPEN'?`${t.player_count}/100 joined`:'Bid locked. Waiting for round to end.';
+            sub.textContent=state==='OPEN'?`${t.player_count}/25 joined`:'Bid locked. Waiting for round to end.';
             document.getElementById('bid-form').classList.add('hidden');
             document.getElementById('bid-waiting').classList.remove('hidden');
         }else{
@@ -462,7 +462,7 @@ function showPlaying(t){
     document.getElementById('prize-pool').textContent=t.prize_pool?`${(Number(BigInt(t.prize_pool))/1e18).toLocaleString(undefined,{maximumFractionDigits:0})} $GAME`:'—';
     document.getElementById('your-arena').textContent=ARENAS[t.arena]||'—';
     if(t.phase_deadline){startTimer(t.phase_deadline)}
-    else{document.getElementById('round-timer').textContent=state==='OPEN'?'Waiting for 100 players...':'—'}
+    else{document.getElementById('round-timer').textContent=state==='OPEN'?'Waiting for 25 players...':'—'}
 }
 
 // ═══ SUBMIT BID ═══
@@ -518,7 +518,7 @@ function startTimer(deadline){
     if(timerInterval)clearInterval(timerInterval);
     const el=document.getElementById('round-timer');
     const update=()=>{
-        const diff=Math.max(0,Math.floor((new Date(deadline)-new Date())/1000));
+        const diff=Math.max(0,Math.floor((new Date(deadline)-new Date())/250));
         el.textContent=diff>0?`${Math.floor(diff/60)}:${(diff%60).toString().padStart(2,'0')}`:'Resolving...';
     };
     update();timerInterval=setInterval(update,1000);

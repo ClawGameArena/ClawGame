@@ -9,3 +9,4 @@ venv/
 artifacts/
 cache/
 typechain-types/
+seed-agents.json
